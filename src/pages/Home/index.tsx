@@ -19,7 +19,7 @@ const newCycleFormValidationSchema = zod.object({
   task: zod.string().min(1, 'Informe a tarefa'),
   minutesAmount: zod
     .number()
-    .min(5, 'O ciclo precisa ser de no mínimo 5 minutos')
+    .min(1, 'O ciclo precisa ser de no mínimo 1 minuto')
     .max(60, 'O ciclo precisa ser de no máximo 60 minutos'),
 })
 
@@ -48,12 +48,18 @@ export function Home() {
   const activeCycle = cycles.find((cycle) => cycle.id === activeCycleId)
 
   useEffect(() => {
+    let interval: number
+
     if (activeCycle) {
-      setInterval(() => {
+      interval = setInterval(() => {
         setAmountSecondsPassed(
           differenceInSeconds(new Date(), activeCycle.startDate),
         )
       }, 1000)
+    }
+
+    return () => {
+      clearInterval(interval)
     }
   }, [activeCycle])
 
@@ -64,10 +70,10 @@ export function Home() {
       minutesAmount: data.minutesAmount,
       startDate: new Date(),
     }
-    reset()
-
     setCycles((state) => [...state, newCycle])
     setActiveCycleId(newCycle.id)
+    reset()
+    setAmountSecondsPassed(0)
   }
 
   const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0
@@ -81,6 +87,12 @@ export function Home() {
 
   const task = watch('task')
   const isSubmitDisabled = !task
+
+  useEffect(() => {
+    if (activeCycle) {
+      document.title = `${minutes}:${seconds}`
+    }
+  }, [minutes, seconds, activeCycle])
 
   return (
     <HomeContainer>
@@ -107,8 +119,8 @@ export function Home() {
             type="number"
             id="minutesAmount"
             placeholder="00"
-            step={5}
-            min={5}
+            step={1}
+            min={1}
             max={60}
             {...register('minutesAmount', { valueAsNumber: true })}
           />
